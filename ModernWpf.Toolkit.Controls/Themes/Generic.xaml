@@ -3,6 +3,8 @@
     
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="/ModernWpf.Toolkit.Controls;component/MarkdownTextBlock/MarkdownTextBlock.xaml"/>
+        <ResourceDictionary Source="/ModernWpf.Toolkit.Controls;component/Eyedropper/Eyedropper.xaml"/>
+        <ResourceDictionary Source="/ModernWpf.Toolkit.Controls;component/Eyedropper/EyedropperToolButton.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 
 </ResourceDictionary>
