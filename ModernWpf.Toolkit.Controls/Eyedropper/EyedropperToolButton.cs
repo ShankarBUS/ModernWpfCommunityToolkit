@@ -191,7 +191,7 @@ namespace ModernWpf.Toolkit.Controls
                 var position = transform.Transform(default);
                 _eyedropper.WorkArea = new Rect(position, new Size(TargetElement.ActualWidth, TargetElement.ActualHeight));
 
-                _eyedropper.UpdateAppScreenshotAsync();
+                _eyedropper.UpdateAppScreenshot();
             }
         }
     }

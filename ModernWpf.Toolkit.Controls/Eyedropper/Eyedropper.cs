@@ -2,13 +2,12 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using ModernWpf.Controls.Primitives;
 using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -24,11 +23,9 @@ namespace ModernWpf.Toolkit.Controls
         private static readonly Cursor DefaultCursor = Cursors.Arrow;
         private static readonly Cursor MoveCursor = Cursors.Cross;
         private readonly TranslateTransform _layoutTransform = new TranslateTransform();
-        private readonly WriteableBitmap _previewImageSource;
         private readonly Grid _rootGrid;
         private readonly Grid _targetGrid;
 
-        private Popup _popup;
         private Window _overlayWindow;
         private BitmapFrame _appScreenshot;
         private Action _lazyTask;
@@ -46,18 +43,12 @@ namespace ModernWpf.Toolkit.Controls
             _rootGrid = new Grid();
             _targetGrid = new Grid
             {
-                Background = Brushes.Transparent
+                Background = new SolidColorBrush(Color.FromArgb(0x01, 0x00, 0x00, 0x00))
             };
 
             _window = Application.Current?.MainWindow;
 
             RenderTransform = _layoutTransform;
-            _previewImageSource = new WriteableBitmap(
-                PreviewPixelsPerRawPixel * PixelCountPerRow,
-                PreviewPixelsPerRawPixel * PixelCountPerRow,
-                96, 96,
-                PixelFormats.Bgra32, null);
-            Preview = _previewImageSource;
             Loaded += Eyedropper_Loaded;
         }
 
@@ -86,11 +77,12 @@ namespace ModernWpf.Toolkit.Controls
             _taskSource = new TaskCompletionSource<Color>();
             HookUpEvents();
             Opacity = 0;
+
             if (startPoint.HasValue)
             {
                 _lazyTask = () =>
                 {
-                    UpdateAppScreenshotAsync();
+                    UpdateAppScreenshot();
                     UpdateEyedropper(startPoint.Value);
                     Opacity = 1;
                 };
@@ -98,11 +90,6 @@ namespace ModernWpf.Toolkit.Controls
 
             _rootGrid.Children.Add(_targetGrid);
             _rootGrid.Children.Add(this);
-
-            //if (_popup != null)
-            //{
-            //    _popup.IsOpen = false;
-            //}
 
             if (_overlayWindow != null)
             {
@@ -115,28 +102,32 @@ namespace ModernWpf.Toolkit.Controls
                 Style = null,
                 AllowsTransparency = true,
                 Background = Brushes.Transparent,
-                Left = _window.Left,
-                Top = _window.Top,
-                Content = _rootGrid
+                Content = _rootGrid,
+                Owner = _window,
+                ShowInTaskbar = false,
+                ShowActivated = false
             };
 
-            //_popup = new Popup
-            //{
-            //    Child = _rootGrid,
-            //    AllowsTransparency = false,
-            //    PlacementTarget = _window,
-            //    Placement = PlacementMode.Top
-            //};
+            FrameworkElement content = (FrameworkElement)_window.Content;
 
-            _overlayWindow.Width = _window.ActualWidth;
-            _overlayWindow.Height = _window.ActualHeight;
+            _overlayWindow.Width = content.ActualWidth;
+            _overlayWindow.Height = content.ActualHeight;
+
+            var point = content.PointToScreen(default);
+            _overlayWindow.Left = point.X; _overlayWindow.Top = point.Y;
+
+            _overlayWindow.SourceInitialized += OverlayWindow_SourceInitialized;
 
             UpdateWorkArea();
             _overlayWindow.Show();
+
             var result = await _taskSource.Task;
             _taskSource = null;
+
+            UnhookOverlayWndProc();
             _overlayWindow.Close();
             _overlayWindow = null;
+
             _rootGrid.Children.Clear();
             return result;
         }
@@ -160,6 +151,8 @@ namespace ModernWpf.Toolkit.Controls
 
             _window.SizeChanged -= Window_SizeChanged;
             _window.SizeChanged += Window_SizeChanged;
+            _window.LocationChanged -= Window_LocationChanged;
+            _window.LocationChanged += Window_LocationChanged;
             //var displayInformation = DisplayInformation.GetForCurrentView();
             //displayInformation.DpiChanged -= Eyedropper_DpiChanged;
             //displayInformation.DpiChanged += Eyedropper_DpiChanged;
@@ -177,9 +170,18 @@ namespace ModernWpf.Toolkit.Controls
             _targetGrid.MouseUp += TargetGrid_MouseUp;
         }
 
+        private void Window_LocationChanged(object sender, EventArgs e)
+        {
+            FrameworkElement content = (FrameworkElement)_window.Content;
+
+            var point = content.PointToScreen(default);
+            _overlayWindow.Left = point.X; _overlayWindow.Top = point.Y;
+        }
+
         private void UnhookEvents()
         {
             _window.SizeChanged -= Window_SizeChanged;
+            _window.LocationChanged -= Window_LocationChanged;
             //DisplayInformation.GetForCurrentView().DpiChanged -= Eyedropper_DpiChanged;
 
             if (_targetGrid != null)
@@ -200,7 +202,11 @@ namespace ModernWpf.Toolkit.Controls
 
         private void TargetGrid_MouseLeave(object sender, MouseEventArgs e)
         {
-            _window.Cursor = DefaultCursor;
+            if (_overlayWindow != null)
+            {
+                _overlayWindow.Cursor = DefaultCursor;
+            }
+
             if (_inputDevice != null)
             {
                 _inputDevice = null;
@@ -210,7 +216,10 @@ namespace ModernWpf.Toolkit.Controls
 
         private void TargetGrid_MouseEnter(object sender, MouseEventArgs e)
         {
-            _window.Cursor = MoveCursor;
+            if (_overlayWindow != null)
+            {
+                _overlayWindow.Cursor = MoveCursor;
+            }
         }
 
         //private async void Eyedropper_DpiChanged(DisplayInformation sender, object args)
@@ -231,7 +240,7 @@ namespace ModernWpf.Toolkit.Controls
             {
                 if (_appScreenshot == null)
                 {
-                    UpdateAppScreenshotAsync();
+                    UpdateAppScreenshot();
                 }
 
                 UpdateEyedropper(position);
@@ -269,7 +278,7 @@ namespace ModernWpf.Toolkit.Controls
         {
             _inputDevice = inputDevice;
             PickStarted?.Invoke(this, EventArgs.Empty);
-            UpdateAppScreenshotAsync();
+            UpdateAppScreenshot();
             UpdateEyedropper(position);
 
             if (Opacity < 1)
@@ -281,28 +290,66 @@ namespace ModernWpf.Toolkit.Controls
         private void Eyedropper_Unloaded(object sender, RoutedEventArgs e)
         {
             UnhookEvents();
-            if (_popup != null)
+            if (_overlayWindow != null)
             {
-                _popup.IsOpen = false;
+                _overlayWindow.Cursor = DefaultCursor;
+                UnhookOverlayWndProc();
+                _overlayWindow.Close();
+                _overlayWindow = null;
             }
 
             _appScreenshot = null;
-
-            _window.Cursor = DefaultCursor;
         }
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            UpdateRootGridSize(e.NewSize.Width, e.NewSize.Height);
-        }
-
-        private void UpdateRootGridSize(double width, double height)
-        {
             if (_overlayWindow != null)
             {
-                _overlayWindow.Width = width;
-                _overlayWindow.Height = height;
+                FrameworkElement content = (FrameworkElement)_window.Content;
+
+                _overlayWindow.Width = content.ActualWidth;
+                _overlayWindow.Height = content.ActualHeight;
             }
         }
+
+        #region Overlay Window
+
+        private void OverlayWindow_SourceInitialized(object sender, EventArgs e)
+        {
+            _overlayWindow.SourceInitialized -= OverlayWindow_SourceInitialized;
+            HookOverlayWndProc();
+        }
+
+        private void HookOverlayWndProc()
+        {
+            var wih = new WindowInteropHelper(_overlayWindow);
+            var hWnd = wih.Handle;
+            var source = HwndSource.FromHwnd(hWnd);
+            source.AddHook(WndProc);
+        }
+
+        private void UnhookOverlayWndProc()
+        {
+            var wih = new WindowInteropHelper(_overlayWindow);
+            var hWnd = wih.Handle;
+            var source = HwndSource.FromHwnd(hWnd);
+            source.RemoveHook(WndProc);
+        }
+
+        private const int MA_NOACTIVATE = 0x3;
+        private const int WM_MOUSEACTIVATE = 0x21;
+
+        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (msg == WM_MOUSEACTIVATE)
+            {
+                handled = true;
+                return new IntPtr(MA_NOACTIVATE);
+            }
+
+            return IntPtr.Zero;
+        }
+
+        #endregion
     }
 }

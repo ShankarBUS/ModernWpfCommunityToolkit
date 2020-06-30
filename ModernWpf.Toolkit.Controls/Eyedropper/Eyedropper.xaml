@@ -3,7 +3,7 @@
                     xmlns:controls="clr-namespace:ModernWpf.Toolkit.Controls">
     
     <Style TargetType="controls:Eyedropper">
-        <Setter Property="Background" Value="{DynamicResource SystemControlBaseLowAcrylicElementBrush}" />
+        <Setter Property="Background" Value="{DynamicResource SystemControlAcrylicElementBrush}" />
         <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="VerticalAlignment" Value="Top" />
         <Setter Property="IsHitTestVisible" Value="False" />
@@ -17,7 +17,7 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}">
-                        <Grid>
+                        <Grid Margin="5">
                             <Grid.RowDefinitions>
                                 <RowDefinition />
                                 <RowDefinition Height="5" />
@@ -26,9 +26,8 @@
                             <Grid x:Name="imageGrid"
                                   Grid.Row="0"
                                   Width="100"
-                                  Height="100"
-                                  Margin="5">
-                                <Image Source="{TemplateBinding Preview}" />
+                                  Height="100">
+                                <Image Source="{Binding Preview, RelativeSource={RelativeSource Mode=TemplatedParent}, Mode=OneWay}" />
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="5*" />

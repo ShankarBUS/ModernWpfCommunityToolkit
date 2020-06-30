@@ -7,6 +7,21 @@
         mc:Ignorable="d" ui:WindowHelper.UseModernWindowStyle="True"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <controls:EyedropperToolButton Grid.Row="0" HorizontalAlignment="Center" TargetElement="{Binding ElementName=Image}"/>
+        <Image Grid.Row="1" x:Name="Image" Source="/Assets/Photos/WestSeattleView.jpg" />
+        <Button Content="Global Eyedropper" Click="Button_Click"/>
+        <Rectangle Stroke="Black" Margin="10" RadiusX="4" RadiusY="4" StrokeThickness="1" Width="20" Height="20" HorizontalAlignment="Right" ToolTip="{Binding ElementName=TargetSolidColorBrush, Path=Color}">
+            <Rectangle.Fill>
+                <SolidColorBrush x:Name="TargetSolidColorBrush"/>
+            </Rectangle.Fill>
+            <Rectangle.Effect>
+                <DropShadowEffect ShadowDepth="0" BlurRadius="10"/>
+            </Rectangle.Effect>
+        </Rectangle>
+
     </Grid>
 </Window>

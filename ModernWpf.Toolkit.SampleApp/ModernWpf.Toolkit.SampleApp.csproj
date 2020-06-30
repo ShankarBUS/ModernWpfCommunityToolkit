@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Assets\Photos\WestSeattleView.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="Assets\NotificationAssets\Sunny-Square.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -30,8 +34,12 @@
     <PackageReference Include="ModernWpfUI" Version="0.9.0" />
   </ItemGroup>
   
-    <ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\ModernWpf.Toolkit.Controls\ModernWpf.Toolkit.Controls.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Resource Include="Assets\Photos\WestSeattleView.jpg" />
   </ItemGroup>
 
 </Project>

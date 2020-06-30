@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -38,16 +37,17 @@ namespace ModernWpf.Toolkit.Controls
                 return;
             }
 
-            if (WorkArea == default(Rect))
+            var content = (FrameworkElement)_window.Content;
+            if (WorkArea == default)
             {
-                _targetGrid.Margin = default(Thickness);
+                _targetGrid.Margin = default;
             }
             else
             {
                 var left = WorkArea.Left;
                 var top = WorkArea.Top;
-                double right = _window.ActualWidth - WorkArea.Right;
-                double bottom = _window.ActualHeight - WorkArea.Bottom;
+                double right = content.ActualWidth - WorkArea.Right;
+                double bottom = content.ActualHeight - WorkArea.Bottom;
 
                 _targetGrid.Margin = new Thickness(left, top, right, bottom);
             }
@@ -62,69 +62,64 @@ namespace ModernWpf.Toolkit.Controls
             var top = Math.Min(
                 _appScreenshot.PixelHeight - 1,
                 Math.Max(centerY - halfPixelCountPerRow, 0));
-            var right = (int)Math.Min(centerX + halfPixelCountPerRow, _appScreenshot.PixelWidth - 1);
-            var bottom = (int)Math.Min(centerY + halfPixelCountPerRow, _appScreenshot.PixelHeight - 1);
+            var right = Math.Min(centerX + halfPixelCountPerRow, _appScreenshot.PixelWidth - 1);
+            var bottom = Math.Min(centerY + halfPixelCountPerRow, _appScreenshot.PixelHeight - 1);
             var width = right - left + 1;
             var height = bottom - top + 1;
-            //var colors = _appScreenshot.GetPixelColors(left, top, width, height);
-            var colorStartX = left - (centerX - halfPixelCountPerRow);
-            var colorStartY = top - (centerY - halfPixelCountPerRow);
+
+            var startX = centerX - halfPixelCountPerRow;
+            var startY = centerY - halfPixelCountPerRow;
+
+            var colorStartX = left - startX;
+            var colorStartY = top - startY;
             var colorEndX = colorStartX + width;
             var colorEndY = colorStartY + height;
 
-            //var size = new Size(PreviewPixelsPerRawPixel, PreviewPixelsPerRawPixel);
+            var size = new Size(PreviewPixelsPerRawPixel, PreviewPixelsPerRawPixel);
             var startPoint = new Point(0, PreviewPixelsPerRawPixel * colorStartY);
+
+            var drawingGroup = new DrawingGroup();
 
             for (var i = colorStartY; i < colorEndY; i++)
             {
                 startPoint.X = colorStartX * PreviewPixelsPerRawPixel;
                 for (var j = colorStartX; j < colorEndX; j++)
                 {
-                    var color = _appScreenshot.GetPixelColor(i, j);//colors[((i - colorStartY) * width) + (j - colorStartX)];
-                    //drawingSession.FillRectangle(new Rect(startPoint, size), color);
-                    var pixelColor = new PixelColor[1,1];
-                    pixelColor[0, 0] = new PixelColor() { Alpha = color.A, Red = color.R, Green = color.G, Blue = color.B };
-                    _previewImageSource.SetPixels(pixelColor, i, j);
+                    var color = _appScreenshot.GetPixelColor(startX + j, startY + i);
+
+                    var rectangleGeometry = new RectangleGeometry() { Rect = new Rect(startPoint, size) };
+
+                    var geometryDrawing = new GeometryDrawing(new SolidColorBrush(color), new Pen(Brushes.Transparent, 0.0), rectangleGeometry);
+                    drawingGroup.Children.Add(geometryDrawing);
                     startPoint.X += PreviewPixelsPerRawPixel;
                 }
 
                 startPoint.Y += PreviewPixelsPerRawPixel;
             }
 
-            //using (var drawingSession = _previewImageSource.CreateDrawingSession(Colors.White))
-            //{
-            //    for (var i = colorStartY; i < colorEndY; i++)
-            //    {
-            //        startPoint.X = colorStartX * PreviewPixelsPerRawPixel;
-            //        for (var j = colorStartX; j < colorEndX; j++)
-            //        {
-            //            var color = colors[((i - colorStartY) * width) + (j - colorStartX)];
-            //            drawingSession.FillRectangle(new Rect(startPoint, size), color);
-            //            startPoint.X += PreviewPixelsPerRawPixel;
-            //        }
-
-            //        startPoint.Y += PreviewPixelsPerRawPixel;
-            //    }
-            //}
+            var drawingImage = new DrawingImage(drawingGroup);
+            drawingImage.Freeze();
+            Preview = drawingImage;
         }
 
-        internal void UpdateAppScreenshotAsync()
+        internal void UpdateAppScreenshot()
         {
             //var displayInfo = DisplayInformation.GetForCurrentView();
             double dpiX = 96;
             double dpiY = 96;
             double scale = 1;//displayInfo.RawPixelsPerViewPixel;
-            double width = _window.ActualWidth;
-            double height = _window.ActualHeight;
+            
             FrameworkElement content = (FrameworkElement)_window.Content;
+            double width = content.ActualWidth;
+            double height = content.ActualHeight;
 
             try
             {
                 var scaleWidth = (int)Math.Ceiling(width / scale);
                 var scaleHeight = (int)Math.Ceiling(height / scale);
                 var renderTargetBitmap = new RenderTargetBitmap(
-                    (int)content.ActualWidth,
-                    (int)content.ActualHeight,
+                    scaleWidth,
+                    scaleHeight,
                     dpiX, dpiY, PixelFormats.Default);
                 renderTargetBitmap.Render(content);
 
@@ -137,15 +132,10 @@ namespace ModernWpf.Toolkit.Controls
         }
     }
 
-    public static class GraphicsHelpers
+    internal static class GraphicsHelpers
     {
         public static Color GetPixelColor(this BitmapFrame bitmapFrame, double x, double y)
         {
-            //var renderTargetBitmap = new RenderTargetBitmap(
-            //    (int)AssociatedObject.ActualWidth,
-            //    (int)AssociatedObject.ActualHeight,
-            //    DpiX, DpiY, PixelFormats.Default);
-            //renderTargetBitmap.Render(AssociatedObject);
             if (x <= bitmapFrame.PixelWidth && y <= bitmapFrame.PixelHeight)
             {
                 var croppedBitmap = new CroppedBitmap(bitmapFrame, new Int32Rect((int)x, (int)y, 1, 1));
@@ -155,21 +145,5 @@ namespace ModernWpf.Toolkit.Controls
             }
             return Colors.Transparent;
         }
-
-        public static void SetPixels(this WriteableBitmap bitmap, PixelColor[,] pixels, int x, int y)
-        {
-            int width = pixels.GetLength(0);
-            int height = pixels.GetLength(1);
-            bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, x, y);
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct PixelColor
-    {
-        public byte Blue;
-        public byte Green;
-        public byte Red;
-        public byte Alpha;
     }
 }
