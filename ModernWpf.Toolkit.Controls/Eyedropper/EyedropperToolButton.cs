@@ -2,11 +2,9 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using ModernWpf.Toolkit.Controls.Helpers;
 using System;
 using System.Windows;
 using System.Windows.Controls.Primitives;
-using System.Windows.Input;
 
 namespace ModernWpf.Toolkit.Controls
 {
@@ -15,17 +13,7 @@ namespace ModernWpf.Toolkit.Controls
     /// </summary>
     public partial class EyedropperToolButton : ButtonBase
     {
-        private const string NormalState = "Normal";
-        private const string MouseOverState = "MouseOver";
-        private const string PressedState = "Pressed";
-        private const string DisabledState = "Disabled";
-        private const string EyedropperEnabledState = "EyedropperEnabled";
-        private const string EyedropperEnabledMouseOverState = "EyedropperEnabledMouseOver";
-        private const string EyedropperEnabledPressedState = "EyedropperEnabledPressed";
-        private const string EyedropperEnabledDisabledState = "EyedropperEnabledDisabled";
-
         private readonly Eyedropper _eyedropper;
-        private readonly Window _window;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EyedropperToolButton"/> class.
@@ -33,9 +21,10 @@ namespace ModernWpf.Toolkit.Controls
         public EyedropperToolButton()
         {
             DefaultStyleKey = typeof(EyedropperToolButton);
-            this.RegisterPropertyChangedCallback(IsEnabledProperty, OnIsEnabledChanged);
             _eyedropper = new Eyedropper();
-            _window = Application.Current?.MainWindow;
+
+            OwnerWindow = Window.GetWindow(this);
+
             Loaded += EyedropperToolButton_Loaded;
         }
 
@@ -62,8 +51,6 @@ namespace ModernWpf.Toolkit.Controls
             Unloaded += EyedropperToolButton_Unloaded;
             ThemeManager.RemoveActualThemeChangedHandler(this, EyedropperToolButton_ActualThemeChanged);
             ThemeManager.AddActualThemeChangedHandler(this, EyedropperToolButton_ActualThemeChanged);
-            _window.SizeChanged -= Window_SizeChanged;
-            _window.SizeChanged += Window_SizeChanged;
 
             _eyedropper.ColorChanged -= Eyedropper_ColorChanged;
             _eyedropper.ColorChanged += Eyedropper_ColorChanged;
@@ -79,7 +66,6 @@ namespace ModernWpf.Toolkit.Controls
             Unloaded -= EyedropperToolButton_Unloaded;
 
             ThemeManager.RemoveActualThemeChangedHandler(this, EyedropperToolButton_ActualThemeChanged);
-            _window.SizeChanged -= Window_SizeChanged;
 
             _eyedropper.ColorChanged -= Eyedropper_ColorChanged;
             _eyedropper.PickStarted -= Eyedropper_PickStarted;
@@ -110,27 +96,6 @@ namespace ModernWpf.Toolkit.Controls
             ThemeManager.SetRequestedTheme(_eyedropper, ThemeManager.GetActualTheme(this));
         }
 
-        /// <inheritdoc />
-        protected override void OnMouseEnter(MouseEventArgs e)
-        {
-            base.OnMouseEnter(e);
-            VisualStateManager.GoToState(this, EyedropperEnabled ? EyedropperEnabledMouseOverState : MouseOverState, true);
-        }
-
-        /// <inheritdoc />
-        protected override void OnMouseLeave(MouseEventArgs e)
-        {
-            base.OnMouseLeave(e);
-            VisualStateManager.GoToState(this, EyedropperEnabled ? EyedropperEnabledState : NormalState, true);
-        }
-
-        /// <inheritdoc />
-        protected override void OnMouseDown(MouseButtonEventArgs e)
-        {
-            base.OnMouseDown(e);
-            VisualStateManager.GoToState(this, EyedropperEnabled ? EyedropperEnabledState : NormalState, true);
-        }
-
         private void Eyedropper_PickStarted(Eyedropper sender, EventArgs args)
         {
             PickStarted?.Invoke(this, args);
@@ -148,44 +113,17 @@ namespace ModernWpf.Toolkit.Controls
             ColorChanged?.Invoke(this, args);
         }
 
-        private void OnIsEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            if (IsEnabled)
-            {
-                if (IsPressed)
-                {
-                    VisualStateManager.GoToState(this, EyedropperEnabled ? EyedropperEnabledPressedState : PressedState, true);
-                }
-                else if (IsMouseOver)
-                {
-                    VisualStateManager.GoToState(this, EyedropperEnabled ? EyedropperEnabledMouseOverState : MouseOverState, true);
-                }
-                else
-                {
-                    VisualStateManager.GoToState(this, EyedropperEnabled ? EyedropperEnabledState : NormalState, true);
-                }
-            }
-            else
-            {
-                VisualStateManager.GoToState(this, EyedropperEnabled ? EyedropperEnabledDisabledState : DisabledState, true);
-            }
-        }
-
         private void EyedropperToolButton_Click(object sender, RoutedEventArgs e)
         {
             EyedropperEnabled = !EyedropperEnabled;
         }
 
-        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            UpdateEyedropperWorkAreaAsync();
-        }
-
         private void UpdateEyedropperWorkAreaAsync()
         {
-            if (TargetElement != null)
+            OwnerWindow ??= Window.GetWindow(this);
+            if (TargetElement != null && OwnerWindow != null)
             {
-                UIElement content = (UIElement)_window.Content;
+                UIElement content = (UIElement)OwnerWindow.Content;
 
                 var transform = TargetElement.TransformToVisual(content);
                 var position = transform.Transform(default);

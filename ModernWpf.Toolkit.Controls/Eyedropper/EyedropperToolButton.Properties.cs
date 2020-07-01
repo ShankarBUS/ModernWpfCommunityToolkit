@@ -2,6 +2,8 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using ModernWpf.Controls.Primitives;
+using System;
 using System.Windows;
 using System.Windows.Media;
 
@@ -17,6 +19,12 @@ namespace ModernWpf.Toolkit.Controls
         /// </summary>
         public static readonly DependencyProperty ColorProperty =
             DependencyProperty.Register(nameof(Color), typeof(Color), typeof(EyedropperToolButton), new PropertyMetadata(default(Color)));
+
+        /// <summary>
+        /// Identifies the <see cref="CornerRadius"/> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty CornerRadiusProperty =
+            ControlHelper.CornerRadiusProperty.AddOwner(typeof(EyedropperToolButton));
 
         /// <summary>
         /// Identifies the <see cref="EyedropperEnabled"/> dependency property.
@@ -37,12 +45,27 @@ namespace ModernWpf.Toolkit.Controls
             DependencyProperty.Register(nameof(TargetElement), typeof(FrameworkElement), typeof(EyedropperToolButton), new PropertyMetadata(default(FrameworkElement), OnTargetElementChanged));
 
         /// <summary>
+        /// Identifies the <see cref="OwnerWindow"/> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty OwnerWindowProperty =
+            Eyedropper.OwnerWindowProperty.AddOwner(typeof(EyedropperToolButton), new PropertyMetadata(null, OnOwnerWindowChanged));
+
+        /// <summary>
         /// Gets the current color value.
         /// </summary>
         public Color Color
         {
             get => (Color)GetValue(ColorProperty);
             private set => SetValue(ColorProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the corner radius of this button.
+        /// </summary>
+        public CornerRadius CornerRadius
+        {
+            get => (CornerRadius)GetValue(CornerRadiusProperty);
+            set => SetValue(CornerRadiusProperty, value);
         }
 
         /// <summary>
@@ -72,19 +95,25 @@ namespace ModernWpf.Toolkit.Controls
             set => SetValue(TargetElementProperty, value);
         }
 
+        /// <summary>
+        /// Gets or sets the owner window of the eyedropper.
+        /// </summary>
+        public Window OwnerWindow
+        {
+            get => (Window)GetValue(OwnerWindowProperty);
+            set => SetValue(OwnerWindowProperty, value);
+        }
+
         private static void OnEyedropperEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is EyedropperToolButton eyedropperToolButton)
             {
                 if (eyedropperToolButton.EyedropperEnabled)
                 {
-                    VisualStateManager.GoToState(eyedropperToolButton, eyedropperToolButton.IsMouseOver ? EyedropperEnabledMouseOverState : EyedropperEnabledState, true);
-
                     eyedropperToolButton._eyedropper.Open().ConfigureAwait(false);
                 }
                 else
                 {
-                    VisualStateManager.GoToState(eyedropperToolButton, eyedropperToolButton.IsMouseOver ? MouseOverState : NormalState, true);
                     eyedropperToolButton._eyedropper.Close();
                 }
             }
@@ -104,6 +133,20 @@ namespace ModernWpf.Toolkit.Controls
             {
                 eyedropperToolButton.UnhookTargetElementEvents(e.OldValue as FrameworkElement);
                 eyedropperToolButton.HookUpTargetElementEvents(e.NewValue as FrameworkElement);
+
+                //if (e.NewValue == null)
+                //{
+                //    return;
+                //}
+
+                //if (eyedropperToolButton.OwnerWindow == Window.GetWindow(e.NewValue as FrameworkElement))
+                //{
+                //    eyedropperToolButton.HookUpTargetElementEvents(e.NewValue as FrameworkElement);
+                //}
+                //else
+                //{
+                //    eyedropperToolButton.TargetElement = null;
+                //}
             }
         }
 
@@ -133,6 +176,14 @@ namespace ModernWpf.Toolkit.Controls
         private void Target_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             UpdateEyedropperWorkAreaAsync();
+        }
+
+        private static void OnOwnerWindowChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is EyedropperToolButton eyedropperToolButton)
+            {
+                eyedropperToolButton._eyedropper.OwnerWindow = (Window)e.NewValue;
+            }
         }
     }
 }

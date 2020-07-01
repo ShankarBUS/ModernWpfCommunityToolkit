@@ -6,6 +6,7 @@ namespace ModernWpf.Toolkit.SampleApp
     public partial class MainWindow : Window
     {
         Eyedropper globalEyedropper;
+
         public MainWindow()
         {
             InitializeComponent();

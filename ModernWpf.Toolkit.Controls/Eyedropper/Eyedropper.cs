@@ -31,8 +31,6 @@ namespace ModernWpf.Toolkit.Controls
         private Action _lazyTask;
         private InputDevice _inputDevice;
         private TaskCompletionSource<Color> _taskSource;
-        private double _currentDpi;
-        private Window _window;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Eyedropper"/> class.
@@ -46,7 +44,7 @@ namespace ModernWpf.Toolkit.Controls
                 Background = new SolidColorBrush(Color.FromArgb(0x01, 0x00, 0x00, 0x00))
             };
 
-            _window = Application.Current?.MainWindow;
+            OwnerWindow ??= Application.Current?.MainWindow;
 
             RenderTransform = _layoutTransform;
             Loaded += Eyedropper_Loaded;
@@ -96,6 +94,11 @@ namespace ModernWpf.Toolkit.Controls
                 _overlayWindow.Close();
             }
 
+            if (OwnerWindow == null)
+            {
+                throw new NullReferenceException(nameof(OwnerWindow) + " must not be null!");
+            }
+
             _overlayWindow = new Window()
             {
                 WindowStyle = WindowStyle.None,
@@ -103,12 +106,12 @@ namespace ModernWpf.Toolkit.Controls
                 AllowsTransparency = true,
                 Background = Brushes.Transparent,
                 Content = _rootGrid,
-                Owner = _window,
+                Owner = OwnerWindow,
                 ShowInTaskbar = false,
                 ShowActivated = false
             };
 
-            FrameworkElement content = (FrameworkElement)_window.Content;
+            FrameworkElement content = (FrameworkElement)OwnerWindow.Content;
 
             _overlayWindow.Width = content.ActualWidth;
             _overlayWindow.Height = content.ActualHeight;
@@ -149,14 +152,12 @@ namespace ModernWpf.Toolkit.Controls
             Unloaded -= Eyedropper_Unloaded;
             Unloaded += Eyedropper_Unloaded;
 
-            _window.SizeChanged -= Window_SizeChanged;
-            _window.SizeChanged += Window_SizeChanged;
-            _window.LocationChanged -= Window_LocationChanged;
-            _window.LocationChanged += Window_LocationChanged;
-            //var displayInformation = DisplayInformation.GetForCurrentView();
-            //displayInformation.DpiChanged -= Eyedropper_DpiChanged;
-            //displayInformation.DpiChanged += Eyedropper_DpiChanged;
-            //_currentDpi = displayInformation.LogicalDpi;
+            OwnerWindow.SizeChanged -= Window_SizeChanged;
+            OwnerWindow.SizeChanged += Window_SizeChanged;
+            OwnerWindow.LocationChanged -= Window_LocationChanged;
+            OwnerWindow.LocationChanged += Window_LocationChanged;
+            OwnerWindow.DpiChanged -= Window_DpiChanged;
+            OwnerWindow.DpiChanged += Window_DpiChanged;
 
             _targetGrid.MouseEnter -= TargetGrid_MouseEnter;
             _targetGrid.MouseEnter += TargetGrid_MouseEnter;
@@ -172,7 +173,7 @@ namespace ModernWpf.Toolkit.Controls
 
         private void Window_LocationChanged(object sender, EventArgs e)
         {
-            FrameworkElement content = (FrameworkElement)_window.Content;
+            FrameworkElement content = (FrameworkElement)OwnerWindow.Content;
 
             var point = content.PointToScreen(default);
             _overlayWindow.Left = point.X; _overlayWindow.Top = point.Y;
@@ -180,9 +181,7 @@ namespace ModernWpf.Toolkit.Controls
 
         private void UnhookEvents()
         {
-            _window.SizeChanged -= Window_SizeChanged;
-            _window.LocationChanged -= Window_LocationChanged;
-            //DisplayInformation.GetForCurrentView().DpiChanged -= Eyedropper_DpiChanged;
+            UnhookWindowEvents(OwnerWindow);
 
             if (_targetGrid != null)
             {
@@ -192,6 +191,13 @@ namespace ModernWpf.Toolkit.Controls
                 _targetGrid.MouseMove -= TargetGrid_MouseMove;
                 _targetGrid.MouseUp -= TargetGrid_MouseUp;
             }
+        }
+
+        private void UnhookWindowEvents(Window window)
+        {
+            window.SizeChanged -= Window_SizeChanged;
+            window.LocationChanged -= Window_LocationChanged;
+            window.DpiChanged -= Window_DpiChanged;
         }
 
         private void Eyedropper_Loaded(object sender, RoutedEventArgs e)
@@ -222,11 +228,10 @@ namespace ModernWpf.Toolkit.Controls
             }
         }
 
-        //private async void Eyedropper_DpiChanged(DisplayInformation sender, object args)
-        //{
-        //    _currentDpi = sender.LogicalDpi;
-        //    await UpdateAppScreenshotAsync();
-        //}
+        private void Window_DpiChanged(object sender, DpiChangedEventArgs e)
+        {
+            UpdateAppScreenshot();
+        }
 
         private void TargetGrid_MouseUp(object sender, MouseButtonEventArgs e)
         {
@@ -305,10 +310,19 @@ namespace ModernWpf.Toolkit.Controls
         {
             if (_overlayWindow != null)
             {
-                FrameworkElement content = (FrameworkElement)_window.Content;
+                FrameworkElement content = (FrameworkElement)OwnerWindow.Content;
 
                 _overlayWindow.Width = content.ActualWidth;
                 _overlayWindow.Height = content.ActualHeight;
+            }
+        }
+
+        private void UpdateOwnerWindow(Window oldWindow)
+        {
+            if (oldWindow != null)
+            {
+                Close();
+                UnhookWindowEvents(oldWindow);
             }
         }
 

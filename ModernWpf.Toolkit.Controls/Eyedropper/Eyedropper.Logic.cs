@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -21,8 +22,33 @@ namespace ModernWpf.Toolkit.Controls
                 return;
             }
 
-            _layoutTransform.X = position.X - (ActualWidth / 2);
-            _layoutTransform.Y = position.Y - ActualHeight;
+            #region Updating Layout Transform
+
+            // Updating Y values
+            if (position.Y > _rootGrid.ActualHeight / 2)
+            {
+                _layoutTransform.Y = position.Y - ActualHeight;
+            }
+            else
+            {
+                _layoutTransform.Y = position.Y;
+            }
+
+            // Updating X values
+            if (position.X > _rootGrid.ActualWidth - (ActualWidth / 2) - 15)
+            {
+                _layoutTransform.X = _rootGrid.ActualWidth - ActualWidth - 15;
+            }
+            else if (position.X < (ActualWidth / 2) + 15)
+            {
+                _layoutTransform.X = 15;
+            }
+            else
+            {
+                _layoutTransform.X = position.X - (ActualWidth / 2);
+            }
+
+            #endregion
 
             var x = (int)Math.Ceiling(Math.Min(_appScreenshot.PixelWidth - 1, Math.Max(position.X, 0)));
             var y = (int)Math.Ceiling(Math.Min(_appScreenshot.PixelHeight - 1, Math.Max(position.Y, 0)));
@@ -37,7 +63,7 @@ namespace ModernWpf.Toolkit.Controls
                 return;
             }
 
-            var content = (FrameworkElement)_window.Content;
+            var content = (FrameworkElement)OwnerWindow.Content;
             if (WorkArea == default)
             {
                 _targetGrid.Margin = default;
@@ -104,12 +130,13 @@ namespace ModernWpf.Toolkit.Controls
 
         internal void UpdateAppScreenshot()
         {
-            //var displayInfo = DisplayInformation.GetForCurrentView();
-            double dpiX = 96;
-            double dpiY = 96;
-            double scale = 1;//displayInfo.RawPixelsPerViewPixel;
+            DpiScale dpiScale = VisualTreeHelper.GetDpi(OwnerWindow);
+
+            double dpiX = dpiScale.PixelsPerInchX;
+            double dpiY = dpiScale.PixelsPerInchY;
+            double scale = dpiScale.PixelsPerDip;
             
-            FrameworkElement content = (FrameworkElement)_window.Content;
+            FrameworkElement content = (FrameworkElement)OwnerWindow.Content;
             double width = content.ActualWidth;
             double height = content.ActualHeight;
 
@@ -120,7 +147,7 @@ namespace ModernWpf.Toolkit.Controls
                 var renderTargetBitmap = new RenderTargetBitmap(
                     scaleWidth,
                     scaleHeight,
-                    dpiX, dpiY, PixelFormats.Default);
+                    dpiX, dpiY, PixelFormats.Pbgra32);
                 renderTargetBitmap.Render(content);
 
                 _appScreenshot = BitmapFrame.Create(renderTargetBitmap);

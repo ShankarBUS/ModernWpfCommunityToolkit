@@ -15,14 +15,16 @@
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="FontWeight" Value="ExtraLight" />
         <Setter Property="FontSize" Value="18" />
-        <Setter Property="ui:FocusVisualHelper.UseSystemFocusVisuals" Value="True" />
+        <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}"/>
+        <Setter Property="ui:FocusVisualHelper.UseSystemFocusVisuals" Value="False" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="controls:EyedropperToolButton">
-                    <Border
-                        Background="{TemplateBinding Background}"
-                        BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="{TemplateBinding BorderThickness}">
+                    <Border x:Name="Border"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}">
                         <Grid x:Name="RootGrid">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition />
@@ -35,149 +37,61 @@
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                           Content="{TemplateBinding Content}"
                                           ContentTemplate="{TemplateBinding ContentTemplate}"/>
-                            <Rectangle Width="8"
-                                   Stroke="Transparent"
-                                   StrokeThickness="1">
+                            <Rectangle Width="8" Margin="2" RadiusX="1" RadiusY="1">
                                 <Rectangle.Fill>
                                     <SolidColorBrush Color="{Binding Color, RelativeSource={RelativeSource Mode=TemplatedParent}}" />
                                 </Rectangle.Fill>
                             </Rectangle>
-                            <VisualStateManager.VisualStateGroups>
-                                <VisualStateGroup x:Name="CommonStates">
-                                    <VisualState x:Name="Normal" />
-                                    <VisualState x:Name="MouseOver">
-                                        <Storyboard>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid"
-                                                                       Storyboard.TargetProperty="Background">
-                                                <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
-                                            </ObjectAnimationUsingKeyFrames>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid"
-                                                                       Storyboard.TargetProperty="BorderBrush">
-                                                <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="{DynamicResource SystemControlHighlightBaseMediumLowBrush}" />
-                                            </ObjectAnimationUsingKeyFrames>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter"
-                                                                       Storyboard.TargetProperty="Foreground">
-                                                <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="{DynamicResource SystemControlHighlightBaseHighBrush}" />
-                                            </ObjectAnimationUsingKeyFrames>
-                                        </Storyboard>
-                                    </VisualState>
-                                    <VisualState x:Name="Pressed">
-                                        <Storyboard>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid"
-                                                                       Storyboard.TargetProperty="Background">
-                                                <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}" />
-                                            </ObjectAnimationUsingKeyFrames>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid"
-                                                                       Storyboard.TargetProperty="BorderBrush">
-                                                <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="{DynamicResource SystemControlHighlightTransparentBrush}" />
-                                            </ObjectAnimationUsingKeyFrames>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter"
-                                                                       Storyboard.TargetProperty="Foreground">
-                                                <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="{DynamicResource SystemControlHighlightBaseHighBrush}" />
-                                            </ObjectAnimationUsingKeyFrames>
-                                        </Storyboard>
-                                    </VisualState>
-                                    <VisualState x:Name="Disabled">
-                                        <Storyboard>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid"
-                                                                       Storyboard.TargetProperty="Background">
-                                                <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
-                                            </ObjectAnimationUsingKeyFrames>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter"
-                                                                       Storyboard.TargetProperty="Foreground">
-                                                <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="{DynamicResource SystemControlDisabledBaseMediumLowBrush}" />
-                                            </ObjectAnimationUsingKeyFrames>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid"
-                                                                       Storyboard.TargetProperty="BorderBrush">
-                                                <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="{DynamicResource SystemControlDisabledTransparentBrush}" />
-                                            </ObjectAnimationUsingKeyFrames>
-                                        </Storyboard>
-                                    </VisualState>
-                                    <VisualState x:Name="EyedropperEnabled">
-                                        <Storyboard>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid"
-                                                                       Storyboard.TargetProperty="Background">
-                                                <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="{DynamicResource SystemControlHighlightAccentBrush}" />
-                                            </ObjectAnimationUsingKeyFrames>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter"
-                                                                       Storyboard.TargetProperty="Foreground">
-                                                <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="{DynamicResource SystemControlHighlightAltChromeWhiteBrush}" />
-                                            </ObjectAnimationUsingKeyFrames>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid"
-                                                                       Storyboard.TargetProperty="BorderBrush">
-                                                <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="{DynamicResource SystemControlHighlightAltTransparentBrush}" />
-                                            </ObjectAnimationUsingKeyFrames>
-                                        </Storyboard>
-                                    </VisualState>
-                                    <VisualState x:Name="EyedropperEnabledMouseOver">
-                                        <Storyboard>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid"
-                                                                       Storyboard.TargetProperty="Background">
-                                                <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="{DynamicResource SystemControlHighlightAccentBrush}" />
-                                            </ObjectAnimationUsingKeyFrames>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid"
-                                                                       Storyboard.TargetProperty="BorderBrush">
-                                                <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="{DynamicResource SystemControlHighlightBaseMediumLowBrush}" />
-                                            </ObjectAnimationUsingKeyFrames>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter"
-                                                                       Storyboard.TargetProperty="Foreground">
-                                                <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="{DynamicResource SystemControlHighlightAltChromeWhiteBrush}" />
-                                            </ObjectAnimationUsingKeyFrames>
-                                        </Storyboard>
-                                    </VisualState>
-                                    <VisualState x:Name="EyedropperEnabledPressed">
-                                        <Storyboard>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid"
-                                                                       Storyboard.TargetProperty="Background">
-                                                <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="{DynamicResource SystemControlHighlightBaseMediumLowBrush}" />
-                                            </ObjectAnimationUsingKeyFrames>
-
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid"
-                                                                       Storyboard.TargetProperty="BorderBrush">
-                                                <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="Transparent" />
-                                            </ObjectAnimationUsingKeyFrames>
-                                        </Storyboard>
-                                    </VisualState>
-                                    <VisualState x:Name="EyedropperEnabledDisabled">
-                                        <Storyboard>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid"
-                                                                       Storyboard.TargetProperty="Background">
-                                                <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
-                                            </ObjectAnimationUsingKeyFrames>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter"
-                                                                       Storyboard.TargetProperty="Foreground">
-                                                <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="{DynamicResource SystemControlDisabledBaseMediumLowBrush}" />
-                                            </ObjectAnimationUsingKeyFrames>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid"
-                                                                       Storyboard.TargetProperty="BorderBrush">
-                                                <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="{DynamicResource SystemControlDisabledTransparentBrush}" />
-                                            </ObjectAnimationUsingKeyFrames>
-                                        </Storyboard>
-                                    </VisualState>
-                                </VisualStateGroup>
-                            </VisualStateManager.VisualStateGroups>
                         </Grid>
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="true">
+                            <Setter Property="Background" TargetName="Border" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
+                            <Setter Property="BorderBrush" TargetName="Border" Value="{DynamicResource SystemControlHighlightBaseMediumLowBrush}" />
+                            <Setter Property="TextElement.Foreground" TargetName="ContentPresenter" Value="{DynamicResource SystemControlHighlightBaseHighBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="true">
+                            <Setter Property="Background" TargetName="Border" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}" />
+                            <Setter Property="BorderBrush" TargetName="Border" Value="{DynamicResource SystemControlHighlightTransparentBrush}" />
+                            <Setter Property="TextElement.Foreground" TargetName="ContentPresenter" Value="{DynamicResource SystemControlHighlightBaseHighBrush}" />
+                        </Trigger>
+                        
+                        <!--region: Eyedropper Enabled-->
+                        
+                        <Trigger Property="EyedropperEnabled" Value="true">
+                            <Setter Property="Background" TargetName="Border" Value="{DynamicResource SystemControlHighlightAccentBrush}" />
+                            <Setter Property="BorderBrush" TargetName="Border" Value="{DynamicResource SystemControlHighlightAltTransparentBrush}" />
+                            <Setter Property="TextElement.Foreground" TargetName="ContentPresenter" Value="{DynamicResource SystemControlHighlightAltChromeWhiteBrush}" />
+                        </Trigger>
+
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsMouseOver" Value="true" />
+                                <Condition Property="EyedropperEnabled" Value="true" />
+                            </MultiTrigger.Conditions>
+                            <Setter Property="Background" TargetName="Border" Value="{DynamicResource SystemControlHighlightAccentBrush}" />
+                            <Setter Property="BorderBrush" TargetName="Border" Value="{DynamicResource SystemControlHighlightBaseMediumLowBrush}" />
+                            <Setter Property="TextElement.Foreground" TargetName="ContentPresenter" Value="{DynamicResource SystemControlHighlightAltChromeWhiteBrush}" />
+                        </MultiTrigger>
+                        
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsPressed" Value="true" />
+                                <Condition Property="EyedropperEnabled" Value="true" />
+                            </MultiTrigger.Conditions>
+                            <Setter Property="Background" TargetName="Border" Value="{DynamicResource SystemControlHighlightBaseMediumLowBrush}" />
+                            <Setter Property="BorderBrush" TargetName="Border" Value="Transparent" />
+                            <Setter Property="TextElement.Foreground" TargetName="ContentPresenter" Value="{DynamicResource SystemControlHighlightBaseHighBrush}" />
+                        </MultiTrigger>
+                        
+                        <!--endregion-->
+
+                        <Trigger Property="IsEnabled" Value="false">
+                            <Setter Property="Background" TargetName="Border" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
+                            <Setter Property="BorderBrush" TargetName="Border" Value="{DynamicResource SystemControlDisabledTransparentBrush}" />
+                            <Setter Property="TextElement.Foreground" TargetName="ContentPresenter" Value="{DynamicResource SystemControlDisabledBaseMediumLowBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

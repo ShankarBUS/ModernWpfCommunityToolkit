@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
 using System.Windows;
 using System.Windows.Media;
 
@@ -31,6 +32,12 @@ namespace ModernWpf.Toolkit.Controls
             DependencyProperty.Register(nameof(WorkArea), typeof(Rect), typeof(Eyedropper), new PropertyMetadata(default(Rect), OnWorkAreaChanged));
 
         /// <summary>
+        /// Identifies the <see cref="OwnerWindow"/> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty OwnerWindowProperty =
+            DependencyProperty.Register(nameof(OwnerWindow), typeof(Window), typeof(Eyedropper), new PropertyMetadata(null, OnOwnerWindowChanged));
+
+        /// <summary>
         /// Gets the current color value.
         /// </summary>
         public Color Color
@@ -57,6 +64,15 @@ namespace ModernWpf.Toolkit.Controls
             set => SetValue(WorkAreaProperty, value);
         }
 
+        /// <summary>
+        /// Gets or sets the owner window of the eyedropper.
+        /// </summary>
+        public Window OwnerWindow
+        {
+            get => (Window)GetValue(OwnerWindowProperty);
+            set => SetValue(OwnerWindowProperty, value);
+        }
+
         private static void OnColorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is Eyedropper eyedropper)
@@ -70,6 +86,20 @@ namespace ModernWpf.Toolkit.Controls
             if (d is Eyedropper eyedropper)
             {
                 eyedropper.UpdateWorkArea();
+            }
+        }
+
+        private static void OnOwnerWindowChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is Eyedropper eyedropper)
+            {
+                eyedropper.UpdateOwnerWindow((Window)e.OldValue);
+
+                if (e.NewValue == null)
+                {
+                    eyedropper.OwnerWindow = Application.Current?.MainWindow;
+                    return;
+                }
             }
         }
     }
